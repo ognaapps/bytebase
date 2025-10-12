@@ -1,0 +1,60 @@
+services:
+  bytebase-db:
+    image: postgres:16
+    container_name: bytebase_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bytebase
+      POSTGRES_PASSWORD: bytebase
+      POSTGRES_DB: bytebase
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - bytebase_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bytebase"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bytebase:
+    image: bytebase/bytebase:latest
+    container_name: bytebase
+    restart: unless-stopped
+    depends_on:
+      bytebase-db:
+        condition: service_healthy
+    environment:
+      # Web port inside the container (proxy will connect to this)
+      BYTEBASE_PORT: 8080
+
+      # Important: set to the full public URL (the one your proxy serves)
+      BYTEBASE_EXTERNAL_URL: http://bytebase.user.localhost
+
+      # Bytebase data & metadata
+      BYTEBASE_DATA_DIR: /var/opt/bytebase
+      BYTEBASE_PG_URL: postgres://bytebase:bytebase@bytebase-db:5432/bytebase?sslmode=disable
+
+      # Optional but recommended if your proxy handles X-Forwarded-* headers
+      BYTEBASE_TRUST_PROXY: "true"
+    volumes:
+      - bytebase_data:/var/opt/bytebase
+    expose:
+      - "8080" # expose to proxy, not the host
+    networks:
+      - bytebase_net
+      - ogna
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pg_data:
+  bytebase_data:
+
+networks:
+  bytebase_net:
+  ogna:
+    external: true # connect to your existing reverse proxy network
