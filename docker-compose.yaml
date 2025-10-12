@@ -3,16 +3,12 @@ services:
     image: postgres:16
     container_name: bytebase_postgres
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: bytebase
-      POSTGRES_PASSWORD: bytebase
-      POSTGRES_DB: bytebase
     volumes:
       - pg_data:/var/lib/postgresql/data
     networks:
       - bytebase_net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bytebase"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,7 +29,7 @@ services:
 
       # Bytebase data & metadata
       BYTEBASE_DATA_DIR: /var/opt/bytebase
-      BYTEBASE_PG_URL: postgres://bytebase:bytebase@bytebase-db:5432/bytebase?sslmode=disable
+      BYTEBASE_PG_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@bytebase-db:5432/${POSTGRES_DB}?sslmode=disable
 
       # Optional but recommended if your proxy handles X-Forwarded-* headers
       BYTEBASE_TRUST_PROXY: "true"
