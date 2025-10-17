@@ -12,6 +12,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    env_file:
+      - .env
 
   bytebase:
     image: bytebase/bytebase:latest
@@ -45,6 +47,8 @@ services:
       interval: 10s
       timeout: 3s
       retries: 10
+    env_file:
+      - .env
 
 volumes:
   pg_data:
