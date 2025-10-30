@@ -1,10 +1,26 @@
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /mnt/volume-db/bytebase/postgress
+      o: bind
+  bytebase_data:
+
+networks:
+  bytebase_net:
+  ogna:
+    external: true
+  databases:
+    external: true
+
 services:
   bytebase-db:
     image: postgres:16
     container_name: bytebase_postgres
     restart: unless-stopped
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - bytebase_net
     healthcheck:
@@ -42,6 +58,7 @@ services:
     networks:
       - bytebase_net
       - ogna
+      - databases
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
       interval: 10s
@@ -56,12 +73,3 @@ services:
       - "traefik.http.services.bytebase.loadbalancer.server.port=8080"
       - "traefik.docker.network=ogna"
       - "traefik.http.routers.bytebase.tls.certresolver=hetzner"
-
-volumes:
-  pg_data:
-  bytebase_data:
-
-networks:
-  bytebase_net:
-  ogna:
-    external: true # connect to your existing reverse proxy network
